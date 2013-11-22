@@ -59,14 +59,15 @@ def get_train_features(data):
     #test_data = test['tweet'].map(lambda x: p.sub(" ",x))
 
     tfidf_words = TfidfVectorizer(sublinear_tf=True, min_df=0.001,
-                                  max_df=0.8, max_features=1000,
+                                  max_df=0.8, max_features=1600,
                                   analyzer="word", stop_words='english',
-                                  strip_accents='unicode')
+                                  strip_accents='unicode', ngram_range=(1, 3))
 
     tfidf_chars = TfidfVectorizer(sublinear_tf=True,
                                   min_df=0.001, max_df=0.8,
-                                  max_features=1000, analyzer="char",
-                            stop_words='english', strip_accents='unicode')
+                                  max_features=1600, analyzer="char",
+                            stop_words='english', strip_accents='unicode',
+                            ngram_range=(2, 7))
 
     tfidf_words.fit(train_data)
     tfidf_chars.fit(train_data)

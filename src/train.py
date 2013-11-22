@@ -10,7 +10,7 @@ from sklearn.grid_search import GridSearchCV
 from sklearn.cross_validation import train_test_split
 from sklearn.metrics import make_scorer
 from sklearn.cross_validation import KFold
-from utils import predict_ridge
+from utils import predict_ridge, predict_lasso
 from datahelper import load_dataset, get_train_features, get_test_features
 from datahelper import get_labels, get_test_ids, get_test_ids
 from utils import predict_and_sub
@@ -78,6 +78,8 @@ def train_models():
 #
 #        meta_train, meta_test = get_meta_features(train_raw, test_raw)
 #
+#        print ("n_samples: %d, n_features: %d" % meta_train.shape)
+#
 #        pred_cv = predict_ridge(meta_train, train_labels, meta_test)
 #        print 'RMSE score: %.6f' % rmse_score(y_train[test_ix], pred_cv)
 
@@ -92,6 +94,8 @@ def train_models():
 
     test_ids = get_test_ids(test)
     meta_train_X, meta_test_X = get_meta_features(train_X, test_X)
+
+    print ("n_samples: %d, n_features: %d" % meta_train_X.shape)
 
     predict_and_sub(meta_train_X, train_Y.values, meta_test_X,
                     test_ids, predict_ridge)

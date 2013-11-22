@@ -74,4 +74,4 @@ def predict_24_models(X_train, y_train, X_test, clf):
 def save_prediction_subs(sampleIds, preds):
     prediction = np.array(np.hstack([np.matrix(sampleIds).T, preds]))
     col = '%i,' + '%f,' * 23 + '%f'
-    np.savetxt('sub7.csv', prediction, col, delimiter=',')
+    np.savetxt('sub10.csv', prediction, col, delimiter=',')
