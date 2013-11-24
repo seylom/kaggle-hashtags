@@ -10,10 +10,14 @@ from sklearn.grid_search import GridSearchCV
 from sklearn.cross_validation import train_test_split
 from sklearn.metrics import make_scorer
 from sklearn.cross_validation import KFold
-from utils import predict_ridge, predict_lasso
+from utils import predict_ridge, predict_lasso, predict_elasticNet
+from utils import  predic_multiple_model, predict_stacked_models
+from utils import predict_knn
 from datahelper import load_dataset, get_train_features, get_test_features
 from datahelper import get_labels, get_test_ids, get_test_ids
 from utils import predict_and_sub
+from scipy.optimize import nnls
+import pandas as pd
 
 
 def rmse_score(target, predictions):
@@ -23,8 +27,9 @@ def rmse_score(target, predictions):
 
 def get_meta_features(train, test):
     print "meta features extraction ..."
-    meta_train, tfidf_w, tfidf_c, lda = get_train_features(train)
-    meta_test = get_test_features(test, tfidf_w, tfidf_c, lda)
+    meta_train, tfidf_w, tfidf_c, lda, cvect = get_train_features(train)
+
+    meta_test = get_test_features(test, tfidf_w, tfidf_c, lda, cvect)
 
     return meta_train, meta_test
 
@@ -56,17 +61,6 @@ def train_models():
         random_state=1)
 
     t0 = time()
-
-    #predict_and_sub(train_X, train_Y.values, test.toarray(),
-#                    test_ids, predict_ridge)
-
-    #predictions = predict_ridge(X_train,y_train,X_test)
-    #predictions = predic_24_models(X_train,y_train,X_test)
-    #predictions = predic_multiple_model(X_train,y_train,X_test)
-    #predictions = predict_24_models(X_train,y_train,X_test, Ridge(alpha=1.0))
-
-    #score = rmse_score(y_test,predictions)
-    #print 'RMSE score: %.6f' % score
 
 #    for train_ix, test_ix in KFold(len(X_train), n_folds=5):
 #        train_raw = X_train[train_ix]
@@ -105,3 +99,4 @@ def train_models():
 
 if __name__ == "__main__":
     train_models()
+    #predict_stacked_models()
