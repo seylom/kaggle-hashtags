@@ -5,7 +5,7 @@ Created on Nov 21, 2013
 '''
 
 import gensim
-import scipy
+from scipy.sparse import hstack
 import pandas as pd
 import numpy as np
 from sklearn.decomposition import TruncatedSVD
@@ -46,7 +46,7 @@ def get_test_features(data, tfidf_w, tfidf_c, lda, lsa, cvect):
     X_counts, _ = get_wordcount_features(data, wordvect=cvect)
     X_topics, _ = get_topic_models_features(X_tfidf_words, lda=lda)
 
-    X_sprs = scipy.sparse.hstack([X_tfidf_words, X_tfidf_chars, X_topics,
+    X_sprs = hstack([X_tfidf_words, X_tfidf_chars, X_topics,
                                   X_counts])
 
     #X = X_topics
@@ -69,7 +69,7 @@ def get_all_features(data, max_features=1000):
     X_counts, cvect = get_wordcount_features(data)
     X_topics, lda = get_topic_models_features(X_tfidf_words, num_topics=500)
 
-    X = scipy.sparse.hstack([X_tfidf_words, X_tfidf_chars, X_topics, X_counts])
+    X = hstack([X_tfidf_words, X_tfidf_chars, X_topics, X_counts])
 
     lsa = TruncatedSVD(max_features)
 #    X = lsa.fit_transform(X)

@@ -124,4 +124,4 @@ def predict_stacked_models():
 def save_prediction_subs(sampleIds, preds):
     prediction = np.array(np.hstack([np.matrix(sampleIds).T, preds]))
     col = '%i,' + '%f,' * 23 + '%f'
-    np.savetxt('sub17.csv', prediction, col, delimiter=',')
+    np.savetxt('submissions/sub17.csv', prediction, col, delimiter=',')
