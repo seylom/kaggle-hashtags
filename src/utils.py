@@ -19,7 +19,19 @@ def rmse_score(target, predictions):
                                                     (len(target) * 24.0))
 
 
+def rmse_score_simple(target, predictions):
+    return np.sqrt(np.sum(np.array(np.array(predictions) - target) ** 2) /
+                                                    (float(len(target))))
+
+
 def predict(train_X, train_Y, test, clf):
+    clf.fit(train_X, train_Y)
+    preds = clf.predict(test)
+    return preds
+
+
+def predict_svr(train_X, train_Y, test):
+    clf = SVR(kernel='rbf', C=1e2, gamma=0.1)
     clf.fit(train_X, train_Y)
     preds = clf.predict(test)
     return preds
@@ -32,8 +44,9 @@ def predict_lasso(train_X, train_Y, test):
     return preds
 
 
-def predict_ridge(train_X, train_Y, test):
-    clf = Ridge(alpha=1.0)
+def predict_ridge(train_X, train_Y, test, param):
+    clf = Ridge(alpha=param)
+    #Ridge(alpha=11.0)
     clf.fit(train_X, train_Y)
     preds = clf.predict(test)
     return preds
@@ -46,8 +59,8 @@ def predict_elasticNet(train_X, train_Y, test):
     return preds
 
 
-def predict_logit(train_X, train_Y, test):
-    clf = LogisticRegression(tol=1e-8, penalty='l2')
+def predict_logit(train_X, train_Y, test, param=1.0):
+    clf = LogisticRegression(tol=1e-8, penalty='l2', C=param)
     clf.fit(train_X, train_Y)
 
     return clf.predict_proba(test)[:, -1]
@@ -81,8 +94,8 @@ def predic_multiple_model(X_train, y_train, X_test):
 
     pred_k_vals = []
     for i in range(15):
-        print "training logit #%d" % (i + 1)
-        preds = predict_logit(X_train, y_train[:, i + 9], X_test)
+        print "training custom classifier #%d" % (i + 1)
+        preds = predict_svr(X_train, y_train[:, i + 9], X_test)
         pred_k_vals.append(np.matrix(preds).transpose())
     pred_k = np.hstack(pred_k_vals)
 
@@ -108,13 +121,14 @@ def predict_24_models(X_train, y_train, X_test, clf):
 
 def predict_stacked_models():
     test = pd.read_csv('test.csv')
-    subs = ['sub12.csv', 'sub10.csv', 'sub9.csv']
+
+    subs = ['submissions/sub12.csv', 'submissions/sub10.csv',
+            'submissions/sub9.csv', 'submissions/sub2.csv']
 
     predictions = np.zeros((test.shape[0], 24))
     print predictions.shape
     for sub in subs:
         df = pd.read_csv(sub)
-
         predictions += df.values[:, 1:]
 
     predictions /= len(subs)
@@ -124,4 +138,4 @@ def predict_stacked_models():
 def save_prediction_subs(sampleIds, preds):
     prediction = np.array(np.hstack([np.matrix(sampleIds).T, preds]))
     col = '%i,' + '%f,' * 23 + '%f'
-    np.savetxt('submissions/sub17.csv', prediction, col, delimiter=',')
+    np.savetxt('submissions/sub22.csv', prediction, col, delimiter=',')
