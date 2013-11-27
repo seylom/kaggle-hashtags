@@ -6,7 +6,7 @@ Created on Nov 21, 2013
 
 import numpy as np
 from sklearn.linear_model import LogisticRegression, ElasticNet
-from sklearn.linear_model import Lasso, Ridge, BayesianRidge
+from sklearn.linear_model import Lasso, Ridge, SGDClassifier
 from sklearn.svm import SVC, LinearSVC, SVR
 from sklearn.multiclass import OneVsRestClassifier
 import math
@@ -160,6 +160,31 @@ def predict_two_models(X_train, y_train, X_test):
     return predictions
 
 
+def predict_sgd(X_train, y_train, X_test, sample_weight):
+    clf = SGDClassifier(loss='log')
+    clf.fit(X_train, y_train, sample_weight=sample_weight)
+
+    predictions = clf.predict_proba(X_test)
+    return predictions
+
+
+def predict_three_models_sgd_ridge(X_train, y_train, X_test):
+    train_s = np.vstack([X_train for _ in xrange(5)])
+    test_s = np.vstack([X_test for _ in xrange(5)])
+    y_s = np.arange(5).repeat(X_train.shape[0])
+    s_weights = y_train[:, 0:5].T.ravel()
+    pred_s = predict_sgd(train_s, y_s, test_s, s_weights)
+
+    train_w = np.vstack([X_train for _ in xrange(4)])
+    test_w = np.vstack([X_test for _ in xrange(4)])
+    y_w = np.arange(4).repeat(X_train.shape[0])
+    w_weights = y_train[:, 5:9].T.ravel()
+    pred_w = predict_sgd(train_w, y_w, test_w, w_weights)
+
+    pred_k = predict(X_train, y_train[:, 9:], X_test,  Ridge(alpha=1.0))
+    predictions = np.hstack((pred_s, pred_w, pred_k))
+    return predictions
+
 #def predict_two_models_bis(X_train, y_train, X_test):
 #    pred_sw = predict(X_train, y_train[:, 0:9], X_test, Ridge(alpha=1.0))
 #
@@ -223,7 +248,17 @@ def predict_stacked_models():
     save_prediction_subs(test['id'], predictions)
 
 
+def predict_weighted_stacked_models():
+    test = pd.read_csv('test.csv')
+
+    pred1 = pd.read_csv('submissions/sub22.csv')
+    pred2 = pd.read_csv('submissions/sub23.csv')
+
+    predictions = 0.35 * pred1.values[:, 1:] + 0.65 * pred2.values[:, 1:]
+    save_prediction_subs(test['id'], predictions)
+
+
 def save_prediction_subs(sampleIds, preds):
     prediction = np.array(np.hstack([np.matrix(sampleIds).T, preds]))
     col = '%i,' + '%f,' * 23 + '%f'
-    np.savetxt('submissions/sub23.csv', prediction, col, delimiter=',')
+    np.savetxt('submissions/sub27.csv', prediction, col, delimiter=',')

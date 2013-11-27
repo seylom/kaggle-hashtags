@@ -20,7 +20,7 @@ from utils import get_bucket
 
 
 def load_dataset():
-    train = pd.read_csv('train.csv')
+    train = pd.read_csv('train.csv', nrows=5000)
     test = pd.read_csv('test.csv')
 
     return train, test

@@ -36,17 +36,17 @@ class FeatureExtractor:
         if self.__settings is None:
             self.__settings = {}
             self.__settings['word'] = 3000
-            self.__settings['char'] = 5000
-            self.__settings['wordcount'] = 5000
+            self.__settings['char'] = 3000
+            self.__settings['wordcount'] = 3000
             self.__settings['charcount'] = 3000
             self.__settings['topic'] = 400
         else:
             if 'word' not in self.__settings:
                 self.__settings['word'] = 3000
             if 'char' not in self.__settings:
-                self.__settings['char'] = 5000
+                self.__settings['char'] = 3000
             if 'wordcount' not in self.__settings:
-                self.__settings['wordcount'] = 5000
+                self.__settings['wordcount'] = 3000
             if 'charcount' not in self.__settings:
                 self.__settings['charcount'] = 3000
             if 'topic' not in self.__settings:
@@ -74,13 +74,13 @@ class FeatureExtractor:
 
             features = hstack(all_results)
 
-#            if self.__svd is None:
-#                self.__svd = TruncatedSVD(n_components=5000)
-#                self.__svd.fit(features)
-#
-#            features = self.__svd.transform(features)
+            if self.__svd is None:
+                self.__svd = TruncatedSVD(n_components=200)
+                self.__svd.fit(features)
 
-            return features.toarray()
+            features = self.__svd.transform(features)
+
+            return features
         else:
             return None
 

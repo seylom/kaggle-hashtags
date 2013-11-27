@@ -15,6 +15,8 @@ from utils import  predict_multiple_model, predict_stacked_models, predict_rf
 from utils import predict_knn, predict_three_models, predict_24_models
 from utils import predict_two_models, predict_and_sub, predict_logit
 from utils import predict_extra_tree, predict_decision_tree
+from utils import predict_three_models_sgd_ridge
+from utils import predict_weighted_stacked_models
 from datahelper import load_dataset, get_test_ids
 from utils import get_labels
 from utils import rmse_score, rmse_score_simple
@@ -242,37 +244,38 @@ def train():
 
     feature_type = ['wordcount', 'char']
 
-#    for train_ix, test_ix in KFold(len(X_train), n_folds=num_fold):
-#        train_raw = X_train[train_ix]
-#        train_labels = y_train[train_ix]
-#        test_raw = X_train[test_ix]
-#
-#        meta_train, meta_test = get_extracted_features(feature_type,
-#                                                       train_raw, test_raw)
-#
-#        if loop_start == True:
-#            print ("================================================")
-#            print ("n_samples: %d, n_features: %d" % meta_train.shape)
-#            loop_start = False
-#
-#        pred_cv = predict_ridge(meta_train, train_labels, meta_test)
-#
-#        score_val = rmse_score(y_train[test_ix], pred_cv)
-#
-#        print 'RMSE score: %.6f' % score_val
-#
-#        rmse_avg += score_val / float(num_fold)
-#
-#    print 'Average RMSE %.6f' % rmse_avg
+    for train_ix, test_ix in KFold(len(X_train), n_folds=num_fold):
+        train_raw = X_train[train_ix]
+        train_labels = y_train[train_ix]
+        test_raw = X_train[test_ix]
 
-    test_ids = get_test_ids(test)
-    meta_train_X, meta_test_X = get_extracted_features(feature_type,
-                                                       train_X, test_X)
+        meta_train, meta_test = get_extracted_features(feature_type,
+                                                       train_raw, test_raw)
 
-    print ("n_samples: %d, n_features: %d" % meta_train_X.shape)
+        if loop_start == True:
+            print ("================================================")
+            print ("n_samples: %d, n_features: %d" % meta_train.shape)
+            loop_start = False
 
-    predict_and_sub(meta_train_X, train_Y.values, meta_test_X,
-                    test_ids, predict_ridge)
+        pred_cv = predict_three_models_sgd_ridge(meta_train, train_labels,
+                                                 meta_test)
+
+        score_val = rmse_score(y_train[test_ix], pred_cv)
+
+        print 'RMSE score: %.6f' % score_val
+
+        rmse_avg += score_val / float(num_fold)
+
+    print 'Average RMSE %.6f' % rmse_avg
+
+#    test_ids = get_test_ids(test)
+#    meta_train_X, meta_test_X = get_extracted_features(feature_type,
+#                                                       train_X, test_X)
+#
+#    print ("n_samples: %d, n_features: %d" % meta_train_X.shape)
+#
+#    predict_and_sub(meta_train_X, train_Y.values, meta_test_X,
+#                    test_ids, predict_ridge)
 
     duration = time() - t0
     print "training time: %fs" % duration
@@ -290,3 +293,5 @@ if __name__ == "__main__":
     #train_single()
     #train_blend()
     train()
+    #predict_stacked_models()
+    predict_weighted_stacked_models()
