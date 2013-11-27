@@ -181,7 +181,7 @@ def predict_three_models_sgd_ridge(X_train, y_train, X_test):
     w_weights = y_train[:, 5:9].T.ravel()
     pred_w = predict_sgd(train_w, y_w, test_w, w_weights)
 
-    pred_k = predict(X_train, y_train[:, 9:], X_test,  Ridge(alpha=1.0))
+    pred_k = predict_ridge(X_train, y_train[:, 9:], X_test)
     predictions = np.hstack((pred_s, pred_w, pred_k))
     return predictions
 
