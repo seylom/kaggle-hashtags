@@ -11,17 +11,16 @@ from sklearn.cross_validation import train_test_split
 #from sklearn.metrics import make_scorer
 from sklearn.cross_validation import KFold
 from utils import predict_ridge, predict_lasso, predict_elasticNet
-from utils import  predic_multiple_model, predict_stacked_models, predict_rf
-from utils import predict_knn
-from utils import predic_two_models, predict_and_sub, predict_logit
+from utils import  predict_multiple_model, predict_stacked_models, predict_rf
+from utils import predict_knn, predict_three_models, predict_24_models
+from utils import predict_two_models, predict_and_sub, predict_logit
 from utils import predict_extra_tree, predict_decision_tree
-from datahelper import load_dataset
-from datahelper import get_labels, get_test_ids
+from datahelper import load_dataset, get_test_ids
+from utils import get_labels
 from utils import rmse_score, rmse_score_simple
-from features import get_full_features, get_word_features, get_topic_features
-from features import get_char_features, get_wordcount_features
 from features import FeatureExtractor
 from scipy.sparse import hstack
+from sklearn.linear_model import LogisticRegression
 
 
 def train_single():
@@ -155,7 +154,7 @@ def train_models():
     print 'Best alpha is %.2f' % best_alpha
 
 
-def train_full():
+def train_blend():
     train, test = load_dataset()
     train_X = train['tweet']
     train_Y = get_labels(train)
@@ -169,8 +168,6 @@ def train_full():
 
     t0 = time()
 
-    method = get_full_features
-
     loop_start = True
     num_fold = 5
     rmse_avg = 0
@@ -182,19 +179,32 @@ def train_full():
         train_labels = y_train[train_ix]
         test_raw = X_train[test_ix]
 
-        fx = FeatureExtractor(settings={'char': 10000})
-        meta_train = fx.get_features(train_raw, feature_type)
-        meta_test = fx.get_features(test_raw, feature_type)
+        meta_train1, meta_test1 = get_extracted_features(['wordcount', 'char'],
+                                                       train_raw, test_raw)
+
+        meta_train2, meta_test2 = get_extracted_features(['word', 'topic'],
+                                                       train_raw, test_raw)
 
         if loop_start == True:
             print ("================================================")
-            print ("n_samples: %d, n_features: %d" % meta_train.shape)
+            print ("n_samples: %d, n_features: %d" % meta_train1.shape)
             loop_start = False
 
-        pred_cv = predict_extra_tree(meta_train, train_labels, meta_test)
+        pred_cv1 = predict_ridge(meta_train1, train_labels, meta_test1)
+        pred_cv2 = predict_ridge(meta_train2, train_labels, meta_test2,
+                                 param=2.5)
+
+        pred_cv = 0.7 * pred_cv1 + 0.3 * pred_cv2
+
+        score_val1 = rmse_score(y_train[test_ix], pred_cv1)
+        score_val2 = rmse_score(y_train[test_ix], pred_cv2)
 
         score_val = rmse_score(y_train[test_ix], pred_cv)
-        print 'RMSE score: %.6f' % score_val
+
+        print 'RMSE score model 1: %.6f' % score_val1
+        print 'RMSE score model 2: %.6f' % score_val2
+
+        print 'RMSE score for blended model: %.6f' % score_val
 
         rmse_avg += score_val / float(num_fold)
 
@@ -211,7 +221,72 @@ def train_full():
     duration = time() - t0
     print "training time: %fs" % duration
 
+
+def train():
+    train, test = load_dataset()
+    train_X = train['tweet']
+    train_Y = get_labels(train)
+    test_X = test['tweet']
+
+    n_samples = len(train_Y)
+
+    X_train, X_test, y_train, y_test = train_test_split(
+        train_X[:n_samples], train_Y[:n_samples], test_size=0.2,
+        random_state=1)
+
+    t0 = time()
+
+    loop_start = True
+    num_fold = 5
+    rmse_avg = 0
+
+    feature_type = ['wordcount', 'char']
+
+#    for train_ix, test_ix in KFold(len(X_train), n_folds=num_fold):
+#        train_raw = X_train[train_ix]
+#        train_labels = y_train[train_ix]
+#        test_raw = X_train[test_ix]
+#
+#        meta_train, meta_test = get_extracted_features(feature_type,
+#                                                       train_raw, test_raw)
+#
+#        if loop_start == True:
+#            print ("================================================")
+#            print ("n_samples: %d, n_features: %d" % meta_train.shape)
+#            loop_start = False
+#
+#        pred_cv = predict_ridge(meta_train, train_labels, meta_test)
+#
+#        score_val = rmse_score(y_train[test_ix], pred_cv)
+#
+#        print 'RMSE score: %.6f' % score_val
+#
+#        rmse_avg += score_val / float(num_fold)
+#
+#    print 'Average RMSE %.6f' % rmse_avg
+
+    test_ids = get_test_ids(test)
+    meta_train_X, meta_test_X = get_extracted_features(feature_type,
+                                                       train_X, test_X)
+
+    print ("n_samples: %d, n_features: %d" % meta_train_X.shape)
+
+    predict_and_sub(meta_train_X, train_Y.values, meta_test_X,
+                    test_ids, predict_ridge)
+
+    duration = time() - t0
+    print "training time: %fs" % duration
+
+
+def get_extracted_features(feature_type, train, test):
+    fx = FeatureExtractor()
+    meta_train = fx.get_features(train, feature_type)
+    meta_test = fx.get_features(test, feature_type)
+    return meta_train, meta_test
+
+
 if __name__ == "__main__":
     #train_models()
     #train_single()
-    train_full()
+    #train_blend()
+    train()

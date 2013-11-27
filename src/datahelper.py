@@ -16,12 +16,11 @@ from nltk.stem import WordNetLemmatizer
 from sklearn.decomposition import PCA
 from nltk.stem import SnowballStemmer, PorterStemmer
 from nltk.tokenize import RegexpTokenizer
-from features import topic_features, word_features
-from features import char_features, wordcount_features
+from utils import get_bucket
 
 
 def load_dataset():
-    train = pd.read_csv('train.csv', nrows=5000)
+    train = pd.read_csv('train.csv')
     test = pd.read_csv('test.csv')
 
     return train, test
@@ -29,15 +28,6 @@ def load_dataset():
 
 def get_test_ids(test):
     return test['id']
-
-
-def get_labels(train):
-    ''' returns labels for the data
-    '''
-    y = train.ix[:, 4:]
-
-    return y
-
 
 #def get_test_features(data, tfidf_w, tfidf_c, lda, lsa, cvect):
 #
