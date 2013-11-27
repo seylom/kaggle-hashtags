@@ -8,11 +8,13 @@ import numpy as np
 from time import time
 from sklearn.grid_search import GridSearchCV
 from sklearn.cross_validation import train_test_split
-from sklearn.metrics import make_scorer
+#from sklearn.metrics import make_scorer
 from sklearn.cross_validation import KFold
 from utils import predict_ridge, predict_lasso, predict_elasticNet
-from utils import  predic_multiple_model, predict_stacked_models
+from utils import  predic_multiple_model, predict_stacked_models, predict_rf
+from utils import predict_knn
 from utils import predic_two_models, predict_and_sub, predict_logit
+from utils import predict_extra_tree, predict_decision_tree
 from datahelper import load_dataset
 from datahelper import get_labels, get_test_ids
 from utils import rmse_score, rmse_score_simple
@@ -22,7 +24,7 @@ from features import FeatureExtractor
 from scipy.sparse import hstack
 
 
-def train_single_logit():
+def train_single():
     train, test = load_dataset()
     train_X = train['tweet']
     train_Y = get_labels(train)
@@ -68,7 +70,7 @@ def train_single_logit():
 #                    print ("n_samples: %d, n_features: %d" % meta_train.shape)
                     loop_start = False
 
-                pred_cv = predict_logit(meta_train, train_labels[:, i],
+                pred_cv = predict_decision_tree(meta_train, train_labels[:, i],
                                         meta_test,
                                         param=param)
                 score_val = rmse_score_simple(y_train[test_ix, i], pred_cv)
@@ -84,7 +86,8 @@ def train_single_logit():
         Xd_train = gx.get_features(X_train, feature_type)
         Xd_test = gx.get_features(X_test, feature_type)
 
-        preds = predict_logit(Xd_train, y_train[:, i], Xd_test, param=param)
+        preds = predict_decision_tree(Xd_train, y_train[:, i], Xd_test,
+                                      param=param)
         predictions.append(preds)
         print 'best RMSE %.2f' % rmse_best
         print 'Best alpha is %.2f' % best_alpha
@@ -172,14 +175,14 @@ def train_full():
     num_fold = 5
     rmse_avg = 0
 
-    feature_type = ['char', 'word', 'wordcount', 'topic']
+    feature_type = ['char']
 
     for train_ix, test_ix in KFold(len(X_train), n_folds=num_fold):
         train_raw = X_train[train_ix]
         train_labels = y_train[train_ix]
         test_raw = X_train[test_ix]
 
-        fx = FeatureExtractor()
+        fx = FeatureExtractor(settings={'char': 10000})
         meta_train = fx.get_features(train_raw, feature_type)
         meta_test = fx.get_features(test_raw, feature_type)
 
@@ -188,8 +191,8 @@ def train_full():
             print ("n_samples: %d, n_features: %d" % meta_train.shape)
             loop_start = False
 
-        pred_cv = predict_ridge(meta_train, train_labels, meta_test,
-                                param=10.0)
+        pred_cv = predict_extra_tree(meta_train, train_labels, meta_test)
+
         score_val = rmse_score(y_train[test_ix], pred_cv)
         print 'RMSE score: %.6f' % score_val
 
@@ -210,6 +213,5 @@ def train_full():
 
 if __name__ == "__main__":
     #train_models()
-    train_single_logit()
-    #train_single_logit()
-    #train_full()
+    #train_single()
+    train_full()

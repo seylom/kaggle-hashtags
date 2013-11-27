@@ -21,7 +21,7 @@ from features import char_features, wordcount_features
 
 
 def load_dataset():
-    train = pd.read_csv('train.csv', nrows=10000)
+    train = pd.read_csv('train.csv', nrows=5000)
     test = pd.read_csv('test.csv')
 
     return train, test

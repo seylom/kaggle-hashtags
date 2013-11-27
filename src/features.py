@@ -222,13 +222,13 @@ class FeatureExtractor:
 
             features = hstack(all_results)
 
-            if self.__svd is None:
-                self.__svd = TruncatedSVD(n_components=1000)
-                self.__svd.fit(features)
+#             if self.__svd is None:
+#                 self.__svd = TruncatedSVD(n_components=1000)
+#                 self.__svd.fit(features)
+#
+#             features = self.__svd.transform(features)
 
-            final_features = self.__svd.transform(features)
-
-            return final_features
+            return features.toarray()
         else:
             return None
 

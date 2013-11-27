@@ -11,7 +11,9 @@ from sklearn.svm import SVC, LinearSVC, SVR
 from sklearn.multiclass import OneVsRestClassifier
 import math
 import pandas as pd
+from sklearn.ensemble import RandomForestRegressor
 from sklearn.neighbors import KNeighborsClassifier
+from sklearn.tree import ExtraTreeRegressor, DecisionTreeRegressor
 
 
 def rmse_score(target, predictions):
@@ -38,13 +40,38 @@ def predict_svr(train_X, train_Y, test):
 
 
 def predict_lasso(train_X, train_Y, test):
-    clf = Lasso(alpha=0.0001)
+    clf = Lasso(alpha=0.1)
     clf.fit(train_X, train_Y)
     preds = clf.predict(test)
     return preds
 
 
-def predict_ridge(train_X, train_Y, test, param):
+def predict_extra_tree(train_X, train_Y, test, param=30):
+    clf = ExtraTreeRegressor(min_samples_leaf=param, min_samples_split=10,
+                             criterion='mse', max_features=1000)
+    clf.fit(train_X, train_Y)
+    preds = clf.predict(test)
+    return preds
+
+
+def predict_decision_tree(train_X, train_Y, test, param=10):
+    clf = DecisionTreeRegressor(min_samples_leaf=param, min_samples_split=1,
+                             criterion='mse', max_features=500)
+    clf.fit(train_X, train_Y)
+    preds = clf.predict(test)
+    return preds
+
+
+def predict_rf(train_X, train_Y, test, param=500):
+    clf = RandomForestRegressor(min_samples_leaf=10, min_samples_split=1,
+                                verbose=1,
+                             criterion='mse', n_estimators=param, n_jobs=1)
+    clf.fit(train_X, train_Y)
+    preds = clf.predict(test)
+    return preds
+
+
+def predict_ridge(train_X, train_Y, test, param=10.0):
     clf = Ridge(alpha=param)
     #Ridge(alpha=11.0)
     clf.fit(train_X, train_Y)
@@ -66,11 +93,11 @@ def predict_logit(train_X, train_Y, test, param=1.0):
     return clf.predict_proba(test)[:, -1]
 
 
-def predict_knn(train_X, train_Y, test):
-    clf = KNeighborsClassifier(n_neighbors=5)
+def predict_knn(train_X, train_Y, test, param=5):
+    clf = KNeighborsClassifier(n_neighbors=param)
     clf.fit(train_X, train_Y)
 
-    return clf.predict_proba(test)[:, -1]
+    return clf.predict(test)
 
 
 def predict_and_sub(train_X, train_Y, test, testSampleIds, pred_method):
