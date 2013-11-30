@@ -17,60 +17,22 @@ from sklearn.decomposition import PCA
 from nltk.stem import SnowballStemmer, PorterStemmer
 from nltk.tokenize import RegexpTokenizer
 from utils import get_bucket
+import re
 
 
 def load_dataset():
     train = pd.read_csv('train.csv', nrows=5000)
     test = pd.read_csv('test.csv')
 
+#     p = re.compile("(RT @mention:|RT|@mention)\W", re.I)
+#     for i, row in train.iterrows():
+#         row['tweet'] = p.sub("", row['tweet'])
+
     return train, test
 
 
 def get_test_ids(test):
     return test['id']
-
-#def get_test_features(data, tfidf_w, tfidf_c, lda, lsa, cvect):
-#
-#    X_tfidf_words, _ = word_features(data, tfidf=tfidf_w)
-#    X_tfidf_chars, _ = char_features(data, tfidf=tfidf_c)
-#    X_counts, _ = wordcount_features(data, wordvect=cvect)
-#    X_topics, _ = topic_features(X_tfidf_words, lda=lda)
-#
-#    X_sprs = hstack([X_tfidf_words, X_tfidf_chars, X_topics,
-#                                  X_counts])
-#
-#    #X = X_topics
-#    #X_sprs = lsa.transform(X_sprs)
-#
-#    #X = X_sprs
-#    X = X_sprs.toarray()
-#
-#    features = X
-#    return features
-
-
-#def get_word_features(data):
-#    X_tfidf_words, tfidf_words = word_features(data)
-#    features = X_tfidf_words.toarray()
-#    return features, tfidf_words
-#
-#
-#def get_char_features(data):
-#    X_tfidf_chars, tfidf_chars = char_features(data)
-#    features = X_tfidf_chars.toarray()
-#    return features, tfidf_chars
-#
-#
-#def get_word_count_features(data):
-#    X_counts, cvect = wordcount_features(data)
-#    features = X_counts.toarray()
-#    return features, cvect
-#
-#
-#def get_topics(data, max_topics=500):
-#    X_topics, lda = topic_features(data, num_topics=max_topics)
-#    features = X_topics.toarray()
-#    return features, lda
 
 
 def stem_tokens(tokens):
