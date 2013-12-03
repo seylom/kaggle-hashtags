@@ -6,21 +6,11 @@ Created on Nov 24, 2013
 
 import gensim
 from scipy.sparse import hstack
-from sklearn.decomposition import TruncatedSVD, PCA
+from sklearn.decomposition import TruncatedSVD
 from sklearn.pipeline import Pipeline, FeatureUnion
 import numpy as np
-from sklearn.linear_model import LogisticRegression, ElasticNet
-from sklearn.linear_model import Lasso, Ridge, SGDClassifier, Perceptron
-from sklearn.svm import SVC, LinearSVC, SVR
-from sklearn.multiclass import OneVsRestClassifier
-import math
-import pandas as pd
-from sklearn.ensemble import RandomForestRegressor, ExtraTreesRegressor
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.tree import ExtraTreeRegressor, DecisionTreeRegressor
-from sklearn.naive_bayes import MultinomialNB
-from sklearn.pipeline import Pipeline
+from sklearn.linear_model import ElasticNet
+from sklearn.linear_model import Ridge, SGDClassifier
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.feature_extraction.text import HashingVectorizer, CountVectorizer
 from sklearn.base import BaseEstimator
@@ -44,17 +34,124 @@ def get_ridge_model():
         'features__word__max_features': [4000],
         'features__word__ngram_range': [(1, 2), (1, 3)],
         'features__word__stop_words': ['english'],
-        'svd__n_components': [200, 300],
-        #'tfidf__use_idf': (True, False),
-        #'tfidf__norm': ('l1', 'l2'),
-        'clf__alpha': [1.0, 10.0],
-        #'clf__penalty': ('l2', 'elasticnet'),
-        #'clf__n_iter': (10, 50, 80),
+        'clf__alpha': [10.0],
+    }
+    return pipeline, parameters
+
+
+def get_ridge_model2():
+
+    combined_features = FeatureUnion([('wordcount', CountVectorizer()),
+                                      ('word', TfidfVectorizer()),
+                                      ('char', TfidfVectorizer())])
+
+    pipeline = Pipeline([('features', combined_features),
+                         ('clf', Ridge())
+                         ])
+
+    parameters = {
+        'features__word__max_df': [0.7],
+        'features__word__max_features': [5000],
+        'features__word__ngram_range': [(1, 2)],
+        'features__word__stop_words': ['english'],
+        'features__char__analyzer': ['char'],
+        'features__char__max_df': [0.7],
+        'features__char__max_features': [5000],
+        'features__char__ngram_range': [(1, 5)],
+        'features__char__stop_words': ['english'],
+        'features__wordcount__max_df': [0.7],
+        'features__wordcount__max_features': [5000],
+        'features__wordcount__ngram_range': [(1, 2)],
+        'features__wordcount__stop_words': ['english'],
+        'features__char__use_idf': [True, False],
+        'clf__alpha': [9.0, 9.5, 10.0, 10.5]
+    }
+    return pipeline, parameters
+
+
+def get_ridge_model3():
+
+    combined_features = FeatureUnion([('wordcount', CountVectorizer()),
+                                      ('word', TfidfVectorizer()),
+                                      ('char', TfidfVectorizer())])
+
+    pipeline = Pipeline([('features', combined_features),
+                         ('clf', MultiRidgeEstimator())
+                         ])
+
+    parameters = {
+        'features__word__max_df': [0.7],
+        'features__word__max_features': [5000],
+        'features__word__ngram_range': [(1, 2)],
+        'features__word__stop_words': ['english'],
+        'features__char__analyzer': ['char'],
+        'features__char__max_df': [0.7],
+        'features__char__max_features': [5000],
+        'features__char__ngram_range': [(1, 5)],
+        'features__char__stop_words': ['english'],
+        'features__wordcount__max_df': [0.7],
+        'features__wordcount__max_features': [5000],
+        'features__wordcount__ngram_range': [(1, 2)],
+        'features__wordcount__stop_words': ['english'],
+        'features__char__use_idf': [True, False],
+        'clf__alpha': [1.0]
+    }
+    return pipeline, parameters
+
+
+def get_elasticnet_model():
+    combined_features = FeatureUnion([('word', CountVectorizer()),
+                                      ('char', TfidfVectorizer())])
+
+    pipeline = Pipeline([('features', combined_features),
+                         ('svd', TruncatedSVD()),
+                         ('clf', ElasticNet())
+                         ])
+
+    parameters = {
+        'features__char__analyzer': ['char'],
+        'features__char__max_df': [0.7],
+        'features__char__max_features': [3000],
+        'features__char__ngram_range': [(1, 7)],
+        'features__char__stop_words': ['english'],
+        'features__word__max_df': [0.7],
+        'features__word__max_features': [4000],
+        'features__word__ngram_range': [(1, 2), (1, 3)],
+        'features__word__stop_words': ['english'],
+        'svd__n_components': [500, 1000],
+        'clf__alpha': [0.0002],
+        'clf__max_iter': [10000],
+        'clf__l1_ratio': [0.2, 0.5, 0.8, 1.0]
     }
     return pipeline, parameters
 
 
 def get_three_predictor_model():
+    combined_features = FeatureUnion([('word', CountVectorizer()),
+                                      ('char', TfidfVectorizer())])
+
+    pipeline = Pipeline([('features', combined_features),
+                         ('clf', ThreeModelsEstimator())])
+
+    parameters = {
+        'features__char__analyzer': ['char'],
+        'features__char__max_df': [0.7],
+        'features__char__max_features': [1500],
+        'features__char__ngram_range': [(1, 7)],
+        'features__char__stop_words': ['english'],
+        'features__word__max_df': [0.4],
+        'features__word__max_features': [1500],
+        'features__word__ngram_range': [(1, 2)],
+        'features__word__stop_words': ['english'],
+        'features__char__use_idf': (True, False),
+        'clf__est1': [(Ridge(10.0), False)],
+        'clf__est2': [(Ridge(10.0), False)],
+        'clf__est3': [(Ridge(10.0), False)],
+    }
+    return pipeline, parameters
+
+
+def get_three_predictor_model2():
     combined_features = FeatureUnion([('word', CountVectorizer()),
                                       ('char', TfidfVectorizer())])
 
@@ -71,33 +168,41 @@ def get_three_predictor_model():
         'features__word__max_features': [4000],
         'features__word__ngram_range': [(1, 2)],
         'features__word__stop_words': ['english'],
-        #'svd__n_components': [300, 600],
-        #'tfidf__use_idf': (True, False),
-        #'tfidf__norm': ('l1', 'l2'),
-        #'clf__alpha': [10.0],
-        #'clf__penalty': ('l2', 'elasticnet'),
-        #'clf__n_iter': (10, 50, 80),
-        'clf__estimator1': [
-                (SVC(degree=3, gamma=100.0, C=0.001,
-                    kernel='rbf'), False),
-                (SVC(degree=3, gamma=100.0, C=0.001,
-                    kernel='rbf'), False),
-                (SVC(degree=3, gamma=10.0, C=0.1,
-                    kernel='rbf'), False)],
-        'clf__estimator2': [(Ridge(10.0), False)],
-        'clf__estimator3': [(ExtraTreesRegressor(min_samples_leaf=10,
-                                                min_samples_split=5,
-                                                n_estimators=100,
-                             criterion='mse'), False),
-                            (ExtraTreesRegressor(min_samples_leaf=30,
-                                                min_samples_split=5,
-                                                n_estimators=500,
-                             criterion='mse'), False),
-                            (DecisionTreeRegressor(min_samples_leaf=30,
-                                                   min_samples_split=5,
-                             criterion='mse',
-                             max_features='sqrt',
-                              max_depth=5), False)],
+        'clf__est1': [(SGDClassifier(loss='log', alpha=0.01, l1_ratio=0,
+                        n_iter=100), True)],
+        'clf__est2': [(Ridge(alpha=10.0), False)],
+        'clf__est3': [(Ridge(alpha=12.0), False)],
+    }
+    return pipeline, parameters
+
+
+def get_three_predictor_model3():
+    pipeline = Pipeline([('features', TfidfVectorizer()),
+                         ('clf', ThreeModelsEstimator())])
+
+    parameters = {
+        'features__analyzer': ['word'],
+        'features__max_df': [0.7],
+        'features__max_features': [2000],
+        'features__ngram_range': [(1, 2)],
+        'features__stop_words': ['english'],
+        'features__use_idf': [True, False],
+        'features__smooth_idf': [True, False],
+        'features__norm': ('l1', 'l2'),
+        'clf__est1': [(Ridge(10.0), False)],
+        'clf__est2': [(Ridge(10.0), False)],
+        'clf__est3': [(Ridge(10.0), False)],
+    }
+    return pipeline, parameters
+
+
+def get_advanced_ridge2():
+    pipeline = Pipeline([('clf', ThreeRidgeEstimator())])
+
+    parameters = {
+        'clf__alpha1': [2],
+        'clf__alpha2': [4],
+        'clf__alpha3': [2],
     }
     return pipeline, parameters
 
@@ -109,13 +214,99 @@ def prob_to_weighted_class_data_transformer(X, Y):
     return train, y, weights
 
 
+class MultiRidgeEstimator(BaseEstimator):
+    '''
+    Trains a Ridge classifier for each output variable
+    '''
+    def __init__(self, alphas=np.repeat(1.0, 24)):
+        self.alphas = alphas
+        self.models = []
+
+    def fit(self, X, Y):
+        for i in range(24):
+            model = Ridge(alpha=self.alphas[i])
+            model.fit(X, Y)
+            self.models.append(model)
+
+    def predict(self, X):
+        preds = []
+        for i in range(24):
+            model_preds = self.models[i].predict(X)
+            preds.append(model_preds)
+        return preds
+
+
+class ThreeRidgeEstimator(BaseEstimator):
+    '''
+    Three Ridge estimator for each class of variable
+    '''
+    def __init__(self, alpha1=1.0,
+                 alpha2=1.0, alpha3=1.0):
+        '''
+        Initializes a new instance of this estimator
+
+        alpha1:
+            alpha parameter for the first ridge
+
+        alpha2:
+            alpha parameter for the second ridge
+
+        alpha3:
+            alpha parameter for the third ridge
+        '''
+        self.alpha1 = alpha1
+        self.alpha2 = alpha2
+        self.alpha3 = alpha3
+        self.models = []
+
+    def fit(self, X, Y):
+        self.model1 = Ridge(alpha=self.alpha1)
+        self.model1.fit(X, Y[:, 0:5])
+
+        self.model2 = Ridge(alpha=self.alpha2)
+        self.model2.fit(X, Y[:, 5:9])
+
+        'fit k'
+        self.model3 = Ridge(alpha=self.alpha3)
+        self.model3.fit(X, Y[:, 9:])
+
+    def predict(self, X):
+        pred_s = self.model1.predict(X)
+        pred_w = self.model2.predict(X)
+        pred_k = self.model3.predict(X)
+
+        pred_s_sum = pred_s.sum(axis=1)[:, np.newaxis]
+        pred_s /= pred_s_sum
+
+        pred_w_sum = pred_w.sum(axis=1)[:, np.newaxis]
+        pred_w /= pred_w_sum
+
+        predictions = np.hstack((pred_s, pred_w, pred_k))
+
+        return predictions
+
+
 class ThreeModelsEstimator(BaseEstimator):
-    def __init__(self, estimator1=None,
-                       estimator2=None,
-                       estimator3=None):
-        self.est1 = estimator1
-        self.est2 = estimator2
-        self.est3 = estimator3
+    '''
+    Three model estimator trainer.
+    '''
+    def __init__(self, est1=Ridge(10.0),
+                       est2=Ridge(10.0),
+                       est3=Ridge(10.0)):
+        '''
+        initializes a new instance of this estimator
+
+        est1:
+            first estimator
+        est2:
+            second estimator
+        est3:
+            third estimator
+        '''
+
+        self.est1 = est1
+        self.est2 = est2
+        self.est3 = est3
 
         if self.est1 is None:
             self.est1 = (Ridge(10.0), False)
@@ -124,29 +315,30 @@ class ThreeModelsEstimator(BaseEstimator):
         if self.est3 is None:
             self.est3 = (Ridge(10.0), False)
 
-        self.__initialize()
-
-    def __initialize(self):
-        self.model1, self.process1 = self.est1
-        self.model2, self.process2 = self.est2
-        self.model3, self.process3 = self.est3
+    def _initialize(self):
+        self.model1, self.do_transform1 = self.est1
+        self.model2, self.do_transform2 = self.est2
+        self.model3, self.do_transform3 = self.est3
 
     def fit(self, X, Y):
+        self._initialize()
+
         'fit S'
-        if self.process1:
+        if self.do_transform1 is True:
             train_s = np.vstack([X for _ in xrange(5)])
             y_s = np.arange(5).repeat(X.shape[0])
             s_weights = Y[:, 0:5].T.ravel()
-            self.model1.fit(train_s, y_s, s_weights)
+
+            self.model1.fit(train_s, y_s, sample_weight=s_weights)
         else:
             self.model1.fit(X, Y[:, 0:5])
 
         'fit w'
-        if self.process2:
+        if self.do_transform2:
             train_w = np.vstack([X for _ in xrange(4)])
             y_w = np.arange(4).repeat(X.shape[0])
             w_weights = Y[:, 5:9].T.ravel()
-            self.model2.fit(train_w, y_w, w_weights)
+            self.model2.fit(train_w, y_w, sample_weight=w_weights)
         else:
             self.model2.fit(X, Y[:, 5:9])
 
@@ -157,6 +349,14 @@ class ThreeModelsEstimator(BaseEstimator):
         pred_s = self.model1.predict(X)
         pred_w = self.model2.predict(X)
         pred_k = self.model3.predict(X)
+
+        #normalize w and s
+        pred_s_sum = pred_s.sum(axis=1)[:, np.newaxis]
+        pred_s /= pred_s_sum
+
+        pred_w_sum = pred_w.sum(axis=1)[:, np.newaxis]
+        pred_w /= pred_w_sum
+
         predictions = np.hstack((pred_s, pred_w, pred_k))
 
         return predictions

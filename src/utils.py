@@ -7,17 +7,15 @@ Created on Nov 21, 2013
 import numpy as np
 from sklearn.linear_model import LogisticRegression, ElasticNet
 from sklearn.linear_model import Lasso, Ridge, SGDClassifier, Perceptron
-from sklearn.svm import SVC, LinearSVC, SVR
-from sklearn.multiclass import OneVsRestClassifier
+from sklearn.svm import SVC, SVR
 import math
 import pandas as pd
 from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.tree import ExtraTreeRegressor, DecisionTreeRegressor
-from sklearn.naive_bayes import MultinomialNB
 from sklearn.pipeline import Pipeline
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.feature_extraction.text import HashingVectorizer, CountVectorizer
+from sklearn.feature_extraction.text import  CountVectorizer
 
 
 def get_labels(data):
@@ -34,34 +32,6 @@ def get_bucket(val, num_buckets=4):
 
     threshold = 1.0 / num_buckets
     return math.floor(val / threshold)
-
-#def get_label_class_w(labels):
-#    n_samples = labels.shape[0]
-#    y_class = np.zeros((n_samples, 60))
-#
-#    idx = 0
-#    for row in labels:
-#        for i in range(15):
-#            val = row[i]
-#            b_index = i * 4 + get_bucket(val, 4)
-#            y_class[idx, b_index] = 1
-#        idx += 1
-#    return y_class
-#
-#
-#def convert_w_to_original(predictions):
-#    preds = np.zeros((predictions.shape[0], 15))
-#
-#    idx = 0
-#    for row in predictions:
-#        for i in range(60):
-#            colindex = math.floor(i / 4)
-#            if row[i] == 1.0:
-#                val = 0.125 + 0.25 * (i % 4)
-#                preds[idx, colindex] = val
-#        idx += 1
-#
-#    return preds
 
 
 def rmse_score(target, predictions):
@@ -125,13 +95,6 @@ def predict_rf(train_X, train_Y, test, param=50):
     clf.fit(train_X, train_Y)
     preds = clf.predict(test)
     return preds
-
-
-# def predict_naives_bayes(train_X, train_Y, test, sample_weight):
-#     clf = OneVsRestClassifier(MultinomialNB())
-#     clf.fit(train_X, train_Y, sample_weigh=sample_weight)
-#     preds = clf.predict(test)
-#     return preds
 
 
 def predict_ridge(train_X, train_Y, test, param=10.0):
@@ -244,19 +207,6 @@ def predict_three_models_rfc_ridge(X_train, y_train, X_test):
     predictions = np.hstack((pred_s, pred_w, pred_k))
     return predictions
 
-#def predict_two_models_bis(X_train, y_train, X_test):
-#    pred_sw = predict(X_train, y_train[:, 0:9], X_test, Ridge(alpha=1.0))
-#
-#    y_class = get_label_class_w(y_train)
-#    clf = RandomForestClassifier(n_estimators=100)
-#    clf.fit(X_train, y_class)
-#    pred_k_class = clf.predict(X_test)
-#
-#    pred_k = convert_w_to_original(pred_k_class)
-#
-#    predictions = np.hstack((pred_sw, pred_k))
-#    return predictions
-
 
 def predict_three_models(X_train, y_train, X_test):
     pred_s = predict(X_train, y_train[:, 0:5], X_test, Ridge(alpha=10.0))
@@ -320,7 +270,7 @@ def predict_weighted_stacked_models():
 def save_prediction_subs(sampleIds, preds):
     prediction = np.array(np.hstack([np.matrix(sampleIds).T, preds]))
     col = '%i,' + '%f,' * 23 + '%f'
-    np.savetxt('submissions/sub27.csv', prediction, col, delimiter=',')
+    np.savetxt('submissions/sub30.csv', prediction, col, delimiter=',')
 
 
 def wordcount_vectorizer():

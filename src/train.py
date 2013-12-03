@@ -7,261 +7,79 @@ from __future__ import print_function
 
 import numpy as np
 from time import time
-
 from pprint import pprint
 from sklearn.grid_search import GridSearchCV
 from sklearn.cross_validation import train_test_split
-#from sklearn.metrics import make_scorer
 from sklearn.cross_validation import KFold
-from utils import predict_ridge, predict_lasso, predict_elasticNet
-from utils import  predict_multiple_model, predict_stacked_models, predict_rf
-from utils import predict_knn, predict_three_models, predict_24_models
-from utils import predict_two_models, predict_and_sub, predict_logit
-from utils import predict_extra_tree, predict_decision_tree
-from utils import predict_three_models_sgd_ridge, predict_rfc
-from utils import predict_weighted_stacked_models
-from utils import predict_three_models_rfc_ridge
+from utils import predict_ridge
+from utils import predict_24_models
+from utils import predict_and_sub
+from utils import  save_prediction_subs
 from datahelper import load_dataset, get_test_ids
 from utils import get_labels
-from utils import rmse_score, rmse_score_simple
+from utils import rmse_score
 from features import FeatureExtractor
 from scipy.sparse import hstack
-from sklearn.linear_model import LogisticRegression, Ridge
-from utils import build_ridge_pipeline
-from sklearn.pipeline import Pipeline, FeatureUnion
+from sklearn.linear_model import  Ridge
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.feature_extraction.text import HashingVectorizer, CountVectorizer
 from sklearn.metrics import make_scorer
-from features import get_ridge_model, get_three_predictor_model
+from features import get_ridge_model
+from features import  get_advanced_ridge2
 
 
-def train_single():
-    train, test = load_dataset()
-    train_X = train['tweet']
-    train_Y = get_labels(train)
-    test_X = test['tweet']
+def get_extracted_features(feature_type, train, test):
+    """
+    Extracts specified features from training and testing set
 
-    n_samples = len(train_Y)
+    parameters
+    ----------
 
-    X_train, X_test, y_train, y_test = train_test_split(
-        train_X[:n_samples], train_Y[:n_samples], test_size=0.2,
-        random_state=1)
+    feature_type: array of feature string (valid values: word, wordcont, char)
+    train: the training set
+    test : the testing set
 
-    t0 = time()
+    Returns:
+    -------
+        tuple: train, test
+            features extracted from training and testing
 
-    predictions = []
-
-    params = [1.0]
-    #np.arange(1, 5)
-
-    #tune ridge parameter
-    for i in range(24):
-        print('=> training target #%d' % i)
-        loop_start = True
-        num_fold = 2
-        rmse_best = 100
-
-        feature_type = ['char']
-
-        preds = None
-        for param in params:
-            #print "Cross validation for param = %.2f" % param
-            rmse_avg = 0
-            for train_ix, test_ix in KFold(len(X_train), n_folds=num_fold):
-                train_raw = X_train[train_ix]
-                train_labels = y_train[train_ix]
-                test_raw = X_train[test_ix]
-
-                fx = FeatureExtractor(settings={'word': 1000})
-                meta_train = fx.get_features(train_raw, feature_type)
-                meta_test = fx.get_features(test_raw, feature_type)
-
-                if loop_start == True:
-#                    print ("================================================")
-#                    print ("n_samples: %d, n_features: %d" % meta_train.shape)
-                    loop_start = False
-
-                pred_cv = predict_decision_tree(meta_train, train_labels[:, i],
-                                        meta_test,
-                                        param=param)
-                score_val = rmse_score_simple(y_train[test_ix, i], pred_cv)
-                print ('RMSE score: %.6f' % score_val)
-
-                rmse_avg += score_val / float(num_fold)
-
-            print('Average RMSE score: %.6f' % rmse_avg)
-            if rmse_avg < rmse_best:
-                best_alpha = param
-
-        gx = FeatureExtractor(settings={'word': 100})
-        Xd_train = gx.get_features(X_train, feature_type)
-        Xd_test = gx.get_features(X_test, feature_type)
-
-        preds = predict_decision_tree(Xd_train, y_train[:, i], Xd_test,
-                                      param=param)
-        predictions.append(preds)
-        print ('best RMSE %.2f' % rmse_best)
-        print ('Best alpha is %.2f' % best_alpha)
-
-    full_preds = np.matrix(predictions).T
-    print (full_preds.shape)
-    print ('Overall RMSE score: %.6f' % rmse_score(y_test, full_preds))
-
-    duration = time() - t0
-    print ("training time: %fs" % duration)
-
-
-def train_models():
-    train, test = load_dataset()
-    train_X = train['tweet']
-    train_Y = get_labels(train)
-    test_X = test['tweet']
-
-    n_samples = len(train_Y)
-
-    X_train, X_test, y_train, y_test = train_test_split(
-        train_X[:n_samples], train_Y[:n_samples], test_size=0.2,
-        random_state=1)
-
-    t0 = time()
-
-    loop_start = True
-    num_fold = 3
-    rmse_best = 100
-    alpha_range = np.arange(8, 15, 0.2)
+    """
 
     fx = FeatureExtractor()
-
-    feature_types = ['word', 'char', 'wordcount', 'topic']
-
-    #tune ridge parameter
-    for alpha in alpha_range:
-        print ("Cross validation for alpha = %.2f" % alpha)
-        rmse_avg = 0
-        for train_ix, test_ix in KFold(len(X_train), n_folds=num_fold):
-            train_raw = X_train[train_ix]
-            train_labels = y_train[train_ix]
-            test_raw = X_train[test_ix]
-
-            meta_train = fx.get_features(train_raw, ['word'])
-            meta_test = fx.get_features(test_raw,  ['word'])
-
-            if loop_start == True:
-                print ("================================================")
-                print ("n_samples: %d, n_features: %d" % meta_train.shape)
-                loop_start = False
-
-            pred_cv = predict_ridge(meta_train, train_labels, meta_test,
-                                    param=alpha)
-            score_val = rmse_score(y_train[test_ix], pred_cv)
-            print ('RMSE score: %.6f' % score_val)
-
-            rmse_avg += score_val / float(num_fold)
-
-        print ('Average RMSE score: %.6f' % rmse_avg)
-        if rmse_avg < rmse_best:
-            best_alpha = alpha
-
-    print ('best RMSE %.2f' % rmse_best)
-    print ('Best alpha is %.2f' % best_alpha)
+    meta_train = fx.get_features(train, feature_type)
+    meta_test = fx.get_features(test, feature_type)
+    return meta_train, meta_test
 
 
-def train_blend():
-    train, test = load_dataset()
-    train_X = train['tweet']
-    train_Y = get_labels(train)
-    test_X = test['tweet']
+def do_cross_val(X_train, y_train, feature_type, estimator, nfolds=3):
+    """
+    Performs n fold cross validation on the dataset for a
+    specified model and reports the rmse score
 
-    n_samples = len(train_Y)
+    parameters
+    ----------
 
-    X_train, X_test, y_train, y_test = train_test_split(
-        train_X[:n_samples], train_Y[:n_samples], test_size=0.2,
-        random_state=1)
+    X_train: numpy matrix (n_samples x n_features)
+    y_train: numpy matrix (n_samples x n_targets)
 
-    t0 = time()
+    feature_type : array of string
+        an array of string to be used for feature extraction
+        valid values: word, wordcount, char
 
-    loop_start = True
-    num_fold = 5
+    nfolds: int, optional
+        the number of folds
+
+    Returns:
+    -------
+        tuple: train, test
+            features extracted from training and testing
+
+    """
+
     rmse_avg = 0
-
-    feature_type = ['wordcount', 'char']
-
-    predictors = {'Ridge': predict_ridge,
-                  'SGD': predict_elasticNet}
-
-    for train_ix, test_ix in KFold(len(X_train), n_folds=num_fold):
-        train_raw = X_train[train_ix]
-        train_labels = y_train[train_ix]
-        test_raw = X_train[test_ix]
-
-        meta_train, meta_test = get_extracted_features(feature_type,
-                                                       train_raw, test_raw)
-
-        if loop_start == True:
-            print ("================================================")
-            print ("n_samples: %d, n_features: %d" % meta_train.shape)
-            loop_start = False
-
-        predictions = []
-
-        for _, item in enumerate(predictors):
-            predictor = predictors[item]
-            preds = predictor(meta_train, train_labels, meta_test)
-
-            pred_score = rmse_score(y_train[test_ix], preds)
-            predictions.append(preds)
-
-            print ('RMSE score for %s model: %.6f' % (item, pred_score))
-
-        blended_preds = np.zeros(y_train[test_ix].shape)
-
-        for predval in predictions:
-            blended_preds += predval
-
-        blended_preds /= len(predictions)
-
-        score_val = rmse_score(y_train[test_ix], blended_preds)
-        print ('RMSE score for blended model: %.6f' % score_val)
-
-        rmse_avg += score_val / float(num_fold)
-
-    print ('Average RMSE %.6f' % rmse_avg)
-
-#    test_ids = get_test_ids(test)
-#    meta_train_X, meta_test_X = get_meta_features(train_X, test_X)
-#
-#    print ("n_samples: %d, n_features: %d" % meta_train_X.shape)
-#
-#    predict_and_sub(meta_train_X, train_Y.values, meta_test_X,
-#                    test_ids, predict_ridge)
-#
-    duration = time() - t0
-    print ("training time: %fs" % duration)
-
-
-def train():
-    train, test = load_dataset()
-    train_X = train['tweet']
-    train_Y = get_labels(train)
-    test_X = test['tweet']
-
-    n_samples = len(train_Y)
-
-    X_train, X_test, y_train, y_test = train_test_split(
-        train_X[:n_samples], train_Y[:n_samples], test_size=0.2,
-        random_state=1)
-
-    t0 = time()
-
     loop_start = True
-    num_fold = 5
-    rmse_avg = 0
 
-    feature_type = ['wordcount', 'char']
-
-    #feature_type = ['wordhash']
-
-    for train_ix, test_ix in KFold(len(X_train), n_folds=num_fold):
+    for train_ix, test_ix in KFold(len(X_train), n_folds=nfolds):
         train_raw = X_train[train_ix]
         train_labels = y_train[train_ix]
         test_raw = X_train[test_ix]
@@ -274,57 +92,54 @@ def train():
             print ("n_samples: %d, n_features: %d" % meta_train.shape)
             loop_start = False
 
-        pred_cv = predict_ridge(meta_train, train_labels,
-                                                 meta_test)
+        pred_cv = predict_24_models(meta_train, train_labels,
+                                                 meta_test,
+                            Ridge(alpha=10.0))
 
         score_val = rmse_score(y_train[test_ix], pred_cv)
 
         print ('RMSE score: %.6f' % score_val)
 
-        rmse_avg += score_val / float(num_fold)
+        rmse_avg += score_val / float(nfolds)
 
-    print ('Average RMSE %.6f' % rmse_avg)
-
-#    test_ids = get_test_ids(test)
-#    meta_train_X, meta_test_X = get_extracted_features(feature_type,
-#                                                       train_X, test_X)
-#
-#    print ("n_samples: %d, n_features: %d" % meta_train_X.shape)
-#
-#    predict_and_sub(meta_train_X, train_Y.values, meta_test_X,
-#                    test_ids, predict_ridge)
-
-    duration = time() - t0
-    print ("training time: %fs" % duration)
+    return rmse_avg
 
 
-def get_extracted_features(feature_type, train, test):
-    fx = FeatureExtractor()
-    meta_train = fx.get_features(train, feature_type)
-    meta_test = fx.get_features(test, feature_type)
-    return meta_train, meta_test
-
-
-def train_model():
-
+def do_submission():
     train, test = load_dataset()
     train_X = train['tweet']
     train_Y = get_labels(train)
     test_X = test['tweet']
 
-    n_samples = len(train_Y)
+    feature_type = ['wordcount', 'char']
+    test_ids = get_test_ids(test)
+    meta_train_X, meta_test_X = get_extracted_features(feature_type,
+                                                       train_X, test_X)
 
-    X_train, X_test, y_train, y_test = train_test_split(
-        train_X[:n_samples], train_Y[:n_samples], test_size=0.2,
-        random_state=1)
+    print ("n_samples: %d, n_features: %d" % meta_train_X.shape)
 
-    scorer = make_scorer(rmse_score, greater_is_better=False)
+    predict_and_sub(meta_train_X, train_Y.values, meta_test_X,
+                    test_ids, predict_ridge)
 
-    #pipeline, parameters = get_ridge_model()
-    pipeline, parameters = get_three_predictor_model()
 
-    grid_search = GridSearchCV(pipeline, parameters, n_jobs=-1, verbose=1,
-                               scoring=scorer, cv=5)
+def do_gridsearch(X_train, y_train, pipeline, parameters, scorer):
+    """
+    performs grid search on the provided data and
+    returns the best estimator parameters
+
+    parameters:
+    ----------
+
+    X_train: numpy matrix (n_samples x n_features)
+    y_train: numpy matrix (n_samples x n_targets)
+
+    pipeline: Scikit learn Pipeline object
+    parameters: a dictionary of parameter values for the pipeline
+    scorer: the score function to be used
+
+    """
+    grid_search = GridSearchCV(pipeline, parameters, verbose=1,
+                               scoring=scorer)
 
     print("Performing grid search...")
     print("pipeline:", [name for name, _ in pipeline.steps])
@@ -341,6 +156,129 @@ def train_model():
     for param_name in sorted(parameters.keys()):
         print("\t%s: %r" % (param_name, best_parameters[param_name]))
 
+    return grid_search.best_estimator_
+
+
+def train():
+    train, _ = load_dataset()
+    train_X = train['tweet']
+    train_Y = get_labels(train)
+
+    n_samples = len(train_Y)
+
+    X_train, _, y_train, _ = train_test_split(
+        train_X[:n_samples], train_Y[:n_samples], test_size=0.2,
+        random_state=1)
+
+    t0 = time()
+
+    feature_type = ['wordcount', 'char']
+
+    rmse_avg = do_cross_val(X_train, y_train,
+                            feature_type, nfolds=3)
+
+    print ('Average RMSE %.6f' % rmse_avg)
+
+    duration = time() - t0
+    print ("training time: %fs" % duration)
+
+
+def train_model():
+
+    train, _ = load_dataset()
+    train_X = train['tweet']
+    train_Y = get_labels(train)
+
+    n_samples = len(train_Y)
+
+    X_train, _, y_train, _ = train_test_split(
+        train_X[:n_samples], train_Y[:n_samples], test_size=0.2,
+        random_state=1)
+
+    scorer = make_scorer(rmse_score, greater_is_better=False)
+
+    pipeline, parameters = get_ridge_model()
+    #pipeline, parameters = get_three_predictor_model()
+    #pipeline, parameters = get_elasticnet_model()
+    #pipeline, parameters = get_three_predictor_model2()
+    #pipeline, parameters = get_three_predictor_model3()
+    #pipeline, parameters = get_ridge_model2()
+    #pipeline, parameters = get_ridge_model3()
+    #pipeline, parameters = get_advanced_ridge()
+
+    do_gridsearch(X_train, y_train, pipeline, parameters, scorer)
+
+
+def train_final():
+    """
+    train a model using grid search for parameter estimation
+    """
+
+    train, test = load_dataset()
+    train_X = train['tweet']
+    train_Y = get_labels(train)
+    test_X = test['tweet']
+
+    tfidf1 = TfidfVectorizer(max_df=0.6,
+                             min_df=0.0000003,
+                             stop_words='english',
+                             strip_accents='unicode',
+                             token_pattern='\w{1,}',
+                             max_features=5000,
+                             norm='l2',
+                             use_idf=False,
+                             smooth_idf=False,
+                             ngram_range=(1, 3))
+
+    tfidf2 = TfidfVectorizer(max_df=0.6,
+                            analyzer='char',
+                            min_df=0.00001,
+                            stop_words='english',
+                            strip_accents='unicode',
+                            norm='l2',
+                            max_features=5000,
+                            ngram_range=(1, 7),
+                            smooth_idf=False,
+                            use_idf=False,
+                            )
+
+    tfidf1.fit(np.hstack((train_X, test_X)))
+    tfidf2.fit(np.hstack((train_X, test_X)))
+
+    train_X1 = tfidf1.transform(train_X)
+    train_X2 = tfidf2.transform(train_X)
+
+    train_X = hstack([train_X1, train_X2]).tocsr()
+
+    n_samples = len(train_Y)
+
+    X_train, _, y_train, _ = train_test_split(
+        train_X[:n_samples], train_Y[:n_samples], test_size=0.2,
+        random_state=1)
+
+    scorer = make_scorer(rmse_score, greater_is_better=False)
+
+    pipeline, parameters = get_advanced_ridge2()
+    #pipeline, parameters = get_three_predictor_model()
+    #pipeline, parameters = get_elasticnet_model()
+    #pipeline, parameters = get_three_predictor_model2()
+    #pipeline, parameters = get_three_predictor_model3()
+    #pipeline, parameters = get_ridge_model2()
+    #pipeline, parameters = get_ridge_model3()
+    #pipeline, parameters = get_advanced_ridge()
+
+    best_estimator = do_gridsearch(X_train, y_train, pipeline, parameters,
+                                   n_jobs=5, verbose=1, scoring=scorer)
+
+    #predict test data
+    test_1 = tfidf1.transform(test_X)
+    test_2 = tfidf2.transform(test_X)
+
+    test_d = hstack([test_1, test_2])
+
+    final_preds = best_estimator.predict(test_d)
+    save_prediction_subs(test['id'], final_preds)
+
 
 if __name__ == "__main__":
     #train_models()
@@ -350,3 +288,4 @@ if __name__ == "__main__":
     #predict_stacked_models()
     #predict_weighted_stacked_models()
     train_model()
+    #train_final()

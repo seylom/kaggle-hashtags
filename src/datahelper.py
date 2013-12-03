@@ -4,29 +4,24 @@ Created on Nov 21, 2013
 @author: seylom
 '''
 
-import gensim
-from scipy.sparse import hstack
 import pandas as pd
-import numpy as np
-from sklearn.decomposition import TruncatedSVD
-from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
-from sklearn.preprocessing import Normalizer
 from nltk import word_tokenize
 from nltk.stem import WordNetLemmatizer
-from sklearn.decomposition import PCA
-from nltk.stem import SnowballStemmer, PorterStemmer
+from nltk.stem import PorterStemmer
 from nltk.tokenize import RegexpTokenizer
-from utils import get_bucket
 import re
 
 
 def load_dataset():
-    train = pd.read_csv('train.csv', nrows=5000)
+    train = pd.read_csv('train.csv')
     test = pd.read_csv('test.csv')
 
-#     p = re.compile("(RT @mention:|RT|@mention)\W", re.I)
-#     for i, row in train.iterrows():
-#         row['tweet'] = p.sub("", row['tweet'])
+    p = re.compile("(RT @mention:|RT|@mention|\\n|#)\W", re.I)
+    for _, row in train.iterrows():
+        row['tweet'] = p.sub("", row['tweet'])
+
+    for _, row in test.iterrows():
+        row['tweet'] = p.sub("", row['tweet'])
 
     return train, test
 
