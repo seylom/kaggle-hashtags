@@ -1,0 +1,17 @@
+Kaggle competition: Partly cloudy with a chance of hashtag
+
+This is my code for a recent kaggle's competition hosted here.
+http://www.kaggle.com/c/crowdflower-weather-twitter
+
+required python modules:
+=======================
+gensim
+nltk
+scikit-learn
+numpy
+scipy
+pandas
+
+How to run the code?
+- Download train.csv and test.csv on the competition's website
+- run either train or train_model in train.py
